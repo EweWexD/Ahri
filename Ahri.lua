@@ -4,12 +4,12 @@
 --╚══╗║ ║║ ║║║║║║║╔══╝║║ ╔╗║╔══╝     ║╚═╝║║╔═╗║║╔╗╔╝ ║║ 
 --║╚═╝║╔╣─╗║║║║║║║║   ║╚═╝║║╚══╗     ║╔═╗║║║ ║║║║║╚╗╔╣─╗
 --╚═══╝╚══╝╚╝╚╝╚╝╚╝   ╚═══╝╚═══╝     ╚╝ ╚╝╚╝ ╚╝╚╝╚═╝╚══╝
--- V1.0
+-- V1.0 released to GoS
 
 
 
 -- [[ Champion ]]
-if GetObjectName( GetmyHero()) ~= "Ahri" then return end
+if GetObjectName(GetMyHero()) ~= "Ahri" then return end
 
 -- [[ Lib & Other ]]
 require ("OpenPredict")
@@ -97,7 +97,7 @@ function Mode()
 end
 
 -- [[ Tick ]]
-Ontick(function()
+OnTick(function()
 	KS()
 	AutoLevel()
 	target = GetCurrentTarget()
@@ -110,7 +110,7 @@ Ontick(function()
 function AutoLevel()
 	if AhriMenu.AutoLevel.DisableAUTOMAX:Value() then return end
 	if GetLevelPoints(myHero) > 0 then
-		DelayAction(function() LevelSpell(levelsc[GetLevel(myHero) + 1 - GetLEvelPoints(myHero)]) end, 0.5)
+		DelayAction(function() LevelSpell(levelsc[GetLevel(myHero) + 1 - GetLevelPoints(myHero)]) end, 0.5)
 	end
 end
 
@@ -126,10 +126,10 @@ function AhriW()
 	CastTargetSpell(target, _W)
 end
 -- [[ Ahri E ]]
-function AhriQ()
-	local WPred = GetLinearAOEPrediction(target, Spells.W)
-	if WPred.hitChance > 0.9 then
-		CastSkillShot(_W, WPred.castPos)
+function AhriE()
+	local EPred = GetLinearAOEPrediction(target, Spells.E)
+	if EPred.hitChance > 0.9 then
+		CastSkillShot(_E, EPred.castPos)
 	end
 end
 
@@ -150,11 +150,11 @@ function Combo()
 			end
 		-- [[ Use R ]]
 		if AhriMenu.Combo.R:Value() then
-			if CanUseSpell(myHEro,_R) == Ready then
+			if CanUseSpell(myHero,_R) == Ready then
 				if ValidTarget(target, Spells.R.range+GetRange(myHero)) then
 					if 100*GetCurrentHp(target)/GetMaxHP(target) < AhriMenu.Combo.HP:Value() then
 						if EnemiesAraund(myHEro, Spells.R.range+GetRange(myHero)) >= AhriMenu.Combo.ME:Value() then
-							CastSkillShot(_R, GetOrigin(target))
+							CastSkillShot(_R, GetMousePos())
 						end
 					end
 				end
@@ -187,11 +187,11 @@ end
 function Farm()
 	if Mode() == "LaneClear" then
 		if AhriMenu.Farm.Q:Value() then
-			for _, minion in pairs(minionManager.Object) do
+			for _, minion in pairs(minionManager.objects) do
 				if GetTeam(minion) == MINION_ENEMY then
 					if 100*GetCurrentMana(myHero)/GetMaxMana(myHero) > AhriMenu.Farm.Mana:Value() then
 						if ValidTarget(minion, Spells.Q.range) then
-							if CanUseSpell(myHEro,_Q) == READY then
+							if CanUseSpell(myHero,_Q) == READY then
 								CastSkillShot(_Q, GetOrigin(minion))
 							end
 						end
@@ -213,7 +213,7 @@ function KS()
 			end
 		-- [[ Use W ]]
 		if AhriMenu.KS.Q:Value() and Ready(_W) and ValidTarget(enemy, Spells.W.range) then
-			if GetCurrentHPU(enemy) < getdmg("W", enemy, myHero) then
+			if GetCurrentHP(enemy) < getdmg("W", enemy, myHero) then
 				AhriW()
 				end
 			end
@@ -233,6 +233,3 @@ OnDraw(function(myHero)
 	-- [[ Draw R ]]
 	if AhriMenu.Draw.R:Value() then DrawCircle(pos, Spells.R.range, 1, 25, 0xFF91C9DD) end
 end)
-
-
-
