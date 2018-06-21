@@ -4,7 +4,10 @@
 --╚══╗║ ║║ ║║║║║║║╔══╝║║ ╔╗║╔══╝     ║╚═╝║║╔═╗║║╔╗╔╝ ║║ 
 --║╚═╝║╔╣─╗║║║║║║║║   ║╚═╝║║╚══╗     ║╔═╗║║║ ║║║║║╚╗╔╣─╗
 --╚═══╝╚══╝╚╝╚╝╚╝╚╝   ╚═══╝╚═══╝     ╚╝ ╚╝╚╝ ╚╝╚╝╚═╝╚══╝
--- V1.0 released to GoS
+-- Changelog V1.1
+-- +The option to choose OpenPredict or GoSPred is added
+--
+-- V1.0 released to GoS.
 
 
 
@@ -18,10 +21,10 @@ function AhriScriptPrint(msg)
 	print("<font color=\"#00ffff\">Ahri Script:</font><font color=\"#ffffff\"> "..msg.."</font>")
 
 end
-AhriScriptPrint("Made by EwEwe")
+AhriScriptPrint("Made by EweEwe")
 
 --  [[ AutoUpdate ]]
-local version = "1.0"
+local version = "1.1"
 function AutoUpdate(data)
 	if tonumber(data) > tonumber(version) then
 		PrintChat("<font color='#00ffff'>New version found!"  .. data)
@@ -59,9 +62,13 @@ AhriMenu.Farm:Slider("Mana", "Min. Mana", 50, 0, 100, 1)
 AhriMenu:SubMenu("KS", "[Ahri] Kill Steal Settings")
 AhriMenu.KS:Boolean("Q", "Use Q", true)
 AhriMenu.KS:Boolean("W", "Use W", true)
+-- [[ Prediction ]]
+AhriMenu:SubMenu("Prediction", "[Ahri] Q & E Prediction")
+AhriMenu.Prediction:DropDown("PredQ", "Prediction Q:", 2, {"OpenPredict", "GoSPred"})
+AhriMenu.Prediction:DropDown("PredE", "Prediction E:", 2, {"OpenPredict", "GoSPred"})
 -- [[ AutoLevel ]]
 AhriMenu:SubMenu("AutoLevel", "[Ahri] AutoLevel")
-AhriMenu.AutoLevel:Boolean("DisableAUTOMAX", "Auto max abilities R>Q>E>W", true)
+AhriMenu.AutoLevel:Boolean("DisableAUTOMAX", "Auto max abilities R>Q>E>W", false)
 -- [[ Draw ]]
 AhriMenu:SubMenu("Draw", "[Ahri] Drawing Settings")
 AhriMenu.Draw:Boolean("Q", "Draw Q", false)
@@ -116,9 +123,16 @@ end
 
 -- [[ Ahri Q ]]
 function AhriQ()
-	local QPred = GetLinearAOEPrediction(target, Spells.Q)
-	if QPred.hitChance > 0.9 then
-		CastSkillShot(_Q, QPred.castPos)
+	if AhriMenu.Prediction.PredQ:Value() == 1 then
+		local QPred = GetLinearAOEPrediction(target, Spells.Q)
+		if QPred.hitChance > 0.9 then
+			CastSkillShot(_Q, QPred.castPos)
+		end
+	elseif AhriMenu.Prediction.PredQ:Value() == 2 then
+		local PredQ = GetPredictionForPlayer(GetOrigin(myHero), target, GetMoveSpeed(target), Spells.Q.speed, Spells.Q.delay*1000, Spells.Q.range, Spells.Q.width,false,true)
+		if PredQ.hitChance == 1 then
+			CastSkillShot(_Q, QPred.PredPos)
+		end
 	end
 end
 -- [[ Ahri W ]]
@@ -127,15 +141,26 @@ function AhriW()
 end
 -- [[ Ahri E ]]
 function AhriE()
-	local EPred = GetLinearAOEPrediction(target, Spells.E)
-	if EPred.hitChance > 0.9 then
-		CastSkillShot(_E, EPred.castPos)
+	if AhriMenu.Prediction.PredE:Value() == 1 then
+		local EPred = GetLinearAOEPrediction(target, Spells.E)
+		if EPred.hitChance > 0.9 then
+			CastSkillShot(_E, EPred.castPos)
+		end
+	elseif AhriMenu.Prediction.PredE:Value() == 2 then
+		local PredE = GetPredictionForPlayer(GetOrigin(myHero), target, GetMoveSpeed(target), Spells.E.speed, Spells.E.delay*1000, Spells.E.range, Spells.E.width,true,false)
+		if PredQ.hitChance == 1 then
+			CastSkillShot(_Q, EPred.PredPos)
+		end
 	end
 end
 
 -- [[ Combo ]]
 function Combo()
 	if Mode() == "Combo" then
+		-- [[ Use E ]]
+		if AhriMenu.Combo.E:Value() and Ready(_E) and ValidTarget(target, Spells.E.range) then
+			AhriE()
+			end
 		-- [[ Use Q ]]
 		if AhriMenu.Combo.Q:Value() and Ready(_Q) and ValidTarget(target, Spells.Q.range) then
 			AhriQ()
@@ -143,10 +168,6 @@ function Combo()
 		-- [[ Use W ]]
 		if AhriMenu.Combo.W:Value() and Ready(_W) and ValidTarget(target, Spells.W.range) then
 			AhriW()
-			end
-		-- [[ Use E ]]
-		if AhriMenu.Combo.E:Value() and Ready(_E) and ValidTarget(target, Spells.E.range) then
-			AhriE()
 			end
 		-- [[ Use R ]]
 		if AhriMenu.Combo.R:Value() then
