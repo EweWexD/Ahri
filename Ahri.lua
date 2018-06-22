@@ -4,8 +4,12 @@
 --╚══╗║ ║║ ║║║║║║║╔══╝║║ ╔╗║╔══╝     ║╚═╝║║╔═╗║║╔╗╔╝ ║║ 
 --║╚═╝║╔╣─╗║║║║║║║║   ║╚═╝║║╚══╗     ║╔═╗║║║ ║║║║║╚╗╔╣─╗
 --╚═══╝╚══╝╚╝╚╝╚╝╚╝   ╚═══╝╚═══╝     ╚╝ ╚╝╚╝ ╚╝╚╝╚═╝╚══╝
+-- Changelog V1.2
+-- Bugs fixed
+-- GosWalk added to orbwalkers
+--
 -- Changelog V1.1
--- +The option to choose OpenPredict or GoSPred is added
+-- +The option to choose OpenPredict or GoSPred is added (removed for any errors)
 --
 -- V1.0 released to GoS.
 
@@ -24,18 +28,19 @@ end
 AhriScriptPrint("Made by EweEwe")
 
 --  [[ AutoUpdate ]]
-local version = "1.1"
+local version = "1.3"
 function AutoUpdate(data)
+	
 	if tonumber(data) > tonumber(version) then
 		PrintChat("<font color='#00ffff'>New version found!"  .. data)
         PrintChat("<font color='#00ffff'>Downloading update, please wait...")
-        DownloadFileAsync("https://raw.githubusercontent.com/EweWexD/Ahri/master/Ahri.lua", SCRIPT_PATH .. "Ahri.lua", function() PrintChat("<font color='#00ffff'>DUpdate Complete, please 2x F6!") return end)
+        DownloadFileAsync("https://raw.githubusercontent.com/EweWexD/Ahri/master/Ahri.lua", SCRIPT_PATH .. "Ahri.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
     else
     	PrintChat("<font color='#00ffff'>No updates found!")
     end
 end
 
-GetWebResultAsync("https://raw.githubusercontent.com/EweWexD/Ahri/master/Ahri.version")
+GetWebResultAsync("https://raw.githubusercontent.com/EweWexD/Ahri/master/Ahri.version", AutoUpdate)
 
 
 -- [[ Menu ]]
@@ -62,10 +67,6 @@ AhriMenu.Farm:Slider("Mana", "Min. Mana", 50, 0, 100, 1)
 AhriMenu:SubMenu("KS", "[Ahri] Kill Steal Settings")
 AhriMenu.KS:Boolean("Q", "Use Q", true)
 AhriMenu.KS:Boolean("W", "Use W", true)
--- [[ Prediction ]]
-AhriMenu:SubMenu("Prediction", "[Ahri] Q & E Prediction")
-AhriMenu.Prediction:DropDown("PredQ", "Prediction Q:", 2, {"OpenPredict", "GoSPred"})
-AhriMenu.Prediction:DropDown("PredE", "Prediction E:", 2, {"OpenPredict", "GoSPred"})
 -- [[ AutoLevel ]]
 AhriMenu:SubMenu("AutoLevel", "[Ahri] AutoLevel")
 AhriMenu.AutoLevel:Boolean("DisableAUTOMAX", "Auto max abilities R>Q>E>W", false)
@@ -100,6 +101,8 @@ function Mode()
 		return DACR:Mode()
 	elseif _G.SLW_Loaded and SLW:Mode() then
 		return SLW:Mode()
+	elseif GoSWalkLoaded and GoSWalk.CurrentMode then
+		return ({"Combo", "Harass", "LaneClear", "LastHit"})[GoSWalk.CurrentMode+1]
 	end
 end
 
@@ -123,16 +126,9 @@ end
 
 -- [[ Ahri Q ]]
 function AhriQ()
-	if AhriMenu.Prediction.PredQ:Value() == 1 then
-		local QPred = GetLinearAOEPrediction(target, Spells.Q)
-		if QPred.hitChance > 0.9 then
-			CastSkillShot(_Q, QPred.castPos)
-		end
-	elseif AhriMenu.Prediction.PredQ:Value() == 2 then
-		local PredQ = GetPredictionForPlayer(GetOrigin(myHero), target, GetMoveSpeed(target), Spells.Q.speed, Spells.Q.delay*1000, Spells.Q.range, Spells.Q.width,false,true)
-		if PredQ.hitChance == 1 then
-			CastSkillShot(_Q, QPred.PredPos)
-		end
+	local QPred = GetLinearAOEPrediction(target, Spells.Q)
+	if QPred.hitChance > 0.9 then
+		CastSkillShot(_Q, QPred.castPos)
 	end
 end
 -- [[ Ahri W ]]
@@ -141,29 +137,22 @@ function AhriW()
 end
 -- [[ Ahri E ]]
 function AhriE()
-	if AhriMenu.Prediction.PredE:Value() == 1 then
-		local EPred = GetLinearAOEPrediction(target, Spells.E)
-		if EPred.hitChance > 0.9 then
-			CastSkillShot(_E, EPred.castPos)
-		end
-	elseif AhriMenu.Prediction.PredE:Value() == 2 then
-		local PredE = GetPredictionForPlayer(GetOrigin(myHero), target, GetMoveSpeed(target), Spells.E.speed, Spells.E.delay*1000, Spells.E.range, Spells.E.width,true,false)
-		if PredQ.hitChance == 1 then
-			CastSkillShot(_Q, EPred.PredPos)
-		end
+	local EPred = GetLinearAOEPrediction(target, Spells.E)
+	if EPred.hitChance > 0.9 then
+		CastSkillShot(_E, EPred.castPos)
 	end
 end
 
 -- [[ Combo ]]
 function Combo()
 	if Mode() == "Combo" then
-		-- [[ Use E ]]
-		if AhriMenu.Combo.E:Value() and Ready(_E) and ValidTarget(target, Spells.E.range) then
-			AhriE()
-			end
 		-- [[ Use Q ]]
 		if AhriMenu.Combo.Q:Value() and Ready(_Q) and ValidTarget(target, Spells.Q.range) then
 			AhriQ()
+			end
+			-- [[ Use E ]]
+		if AhriMenu.Combo.E:Value() and Ready(_E) and ValidTarget(target, Spells.E.range) then
+			AhriE()
 			end
 		-- [[ Use W ]]
 		if AhriMenu.Combo.W:Value() and Ready(_W) and ValidTarget(target, Spells.W.range) then
