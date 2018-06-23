@@ -4,9 +4,16 @@
 --╚══╗║ ║║ ║║║║║║║╔══╝║║ ╔╗║╔══╝     ║╚═╝║║╔═╗║║╔╗╔╝ ║║ 
 --║╚═╝║╔╣─╗║║║║║║║║   ║╚═╝║║╚══╗     ║╔═╗║║║ ║║║║║╚╗╔╣─╗
 --╚═══╝╚══╝╚╝╚╝╚╝╚╝   ╚═══╝╚═══╝     ╚╝ ╚╝╚╝ ╚╝╚╝╚═╝╚══╝
+-- Changelog V1.4
+-- +GoSPred added again but now it works correctly.
+-- +Problem that E does not detect resolved minions.
+--
+-- Changelog V1.3
+-- +removed GosWalk for bugs
+--
 -- Changelog V1.2
--- Bugs fixed
--- GosWalk added to orbwalkers
+-- +Bugs fixed
+-- G+osWalk added to orbwalkers
 --
 -- Changelog V1.1
 -- +The option to choose OpenPredict or GoSPred is added (removed for any errors)
@@ -69,7 +76,11 @@ AhriMenu.KS:Boolean("Q", "Use Q", true)
 AhriMenu.KS:Boolean("W", "Use W", true)
 -- [[ AutoLevel ]]
 AhriMenu:SubMenu("AutoLevel", "[Ahri] AutoLevel")
-AhriMenu.AutoLevel:Boolean("DisableAUTOMAX", "Auto max abilities R>Q>E>W", false)
+AhriMenu.AutoLevel:Boolean("DisableAUTOMAX", "Auto max abilities R>Q>E>W", true)
+-- [[ Prediction ]]
+AhriMenu:SubMenu("Prediction", "[Ahri] Prediction Settings")
+AhriMenu.Prediction:DropDown("QPrediction","Prediction of Q", 2, {"OpenPredict", "GoSPrediction"})
+AhriMenu.Prediction:DropDown("EPrediction","Prediction of E", 2, {"OpenPredict", "GoSPrediction"})
 -- [[ Draw ]]
 AhriMenu:SubMenu("Draw", "[Ahri] Drawing Settings")
 AhriMenu.Draw:Boolean("Q", "Draw Q", false)
@@ -85,7 +96,7 @@ local levelsc = {_Q, _E, _W, _Q, _Q, _R, _Q, _E, _Q, _E, _R, _E, _E, _W, _W, _R,
 local Spells = {
 	Q = {range = 880, delay = 0.25, speed = 1700, width = 100 },
 	W = {range = 700},
-	E = {range = 975, delay = 0.25, speed = 1600, width = 60},
+	E = {range = 975, delay = 0.25, speed = 1600, width = 60, collision = true, col = {"minion", "yasuowall"}},
 	R = {range = 450},
 }
 
@@ -126,20 +137,35 @@ end
 
 -- [[ Ahri Q ]]
 function AhriQ()
-	local QPred = GetLinearAOEPrediction(target, Spells.Q)
-	if QPred.hitChance > 0.9 then
-		CastSkillShot(_Q, QPred.castPos)
+	if AhriMenu.Prediction.QPrediction:Value() == 1 then
+		local QPred = GetLinearAOEPrediction(target, Spells.Q)
+		if QPred.hitChance > 0.9 then
+			CastSkillShot(_Q, QPred.castPos)
+		end
+	elseif AhriMenu.Prediction.QPrediction:Value() == 2 then
+		local QPred = GetPredictionForPlayer(GetOrigin(myHero), target,GetMoveSpeed(target), Spells.Q.speed, Spells.Q.delay*1000, Spells.Q.range, Spells.Q.width,false,true)
+		if QPred.HitChance == 1 then
+			CastSkillShot(_Q, QPred.PredPos)
+		end
 	end
 end
+
 -- [[ Ahri W ]]
 function AhriW()
 	CastTargetSpell(target, _W)
 end
 -- [[ Ahri E ]]
 function AhriE()
-	local EPred = GetLinearAOEPrediction(target, Spells.E)
-	if EPred.hitChance > 0.9 then
-		CastSkillShot(_E, EPred.castPos)
+	if AhriMenu.Prediction.EPrediction:Value() == 1 then
+		local EPred = GetLinearAOEPrediction(target, Spells.E)
+		if EPred.hitChance > 0.9 then
+			CastSkillShot(_E, EPred.castPos)
+		end
+	elseif AhriMenu.Prediction.EPrediction:Value() == 2 then
+		local EPred = GetPredictionForPlayer(GetOrigin(myHero), target,GetMoveSpeed(target), Spells.E.speed, Spells.E.delay*100, Spells.E.range, Spells.E.width,true,false)
+		if EPred.HitChance == 1 then
+			CastSkillShot(_E, EPred.PredPos)
+		end
 	end
 end
 
