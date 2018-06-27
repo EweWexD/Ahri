@@ -4,6 +4,9 @@
 --╚══╗║ ║║ ║║║║║║║╔══╝║║ ╔╗║╔══╝     ║╚═╝║║╔═╗║║╔╗╔╝ ║║ 
 --║╚═╝║╔╣─╗║║║║║║║║   ║╚═╝║║╚══╗     ║╔═╗║║║ ║║║║║╚╗╔╣─╗
 --╚═══╝╚══╝╚╝╚╝╚╝╚╝   ╚═══╝╚═══╝     ╚╝ ╚╝╚╝ ╚╝╚╝╚═╝╚══╝
+-- Changelog V1.5
+-- +Now, you can choose the combo mode ( Normal mode or Start with E)
+
 -- Changelog V1.4
 -- +GoSPred added again but now it works correctly.
 -- +Problem that E does not detect resolved minions.
@@ -13,7 +16,7 @@
 --
 -- Changelog V1.2
 -- +Bugs fixed
--- G+osWalk added to orbwalkers
+-- +GosWalk added to orbwalkers
 --
 -- Changelog V1.1
 -- +The option to choose OpenPredict or GoSPred is added (removed for any errors)
@@ -35,7 +38,7 @@ end
 AhriScriptPrint("Made by EweEwe")
 
 --  [[ AutoUpdate ]]
-local version = "1.3"
+local version = "1.5"
 function AutoUpdate(data)
 	
 	if tonumber(data) > tonumber(version) then
@@ -54,12 +57,14 @@ GetWebResultAsync("https://raw.githubusercontent.com/EweWexD/Ahri/master/Ahri.ve
 local AhriMenu = Menu("Ahri", "Simple Ahri")
 -- [[ Combo ]]
 AhriMenu:SubMenu("Combo", "[Ahri] Combo Settings")
+AhriMenu.Combo:DropDown("ComboMode", "Combo Mode", 1, {"Normal Combo", "Start with E"})
 AhriMenu.Combo:Boolean("Q", "Use Q", true)
 AhriMenu.Combo:Boolean("W", "Use W", true)
 AhriMenu.Combo:Boolean("E", "Use E", true)
 AhriMenu.Combo:Boolean("R", "Use R", true)
 AhriMenu.Combo:Slider("ME", "Minimum Enemies: R", 1, 0, 5, 1)
 AhriMenu.Combo:Slider("HP","HP-Manager: R", 40, 0, 100, 5)
+
 -- [[ Harass ]]
 AhriMenu:SubMenu("Harass", "[Ahri] Harass Settings")
 AhriMenu.Harass:Boolean("Q", "Use Q", true)
@@ -172,31 +177,58 @@ end
 -- [[ Combo ]]
 function Combo()
 	if Mode() == "Combo" then
-		-- [[ Use Q ]]
-		if AhriMenu.Combo.Q:Value() and Ready(_Q) and ValidTarget(target, Spells.Q.range) then
-			AhriQ()
-			end
+		if AhriMenu.Combo.ComboMode:Value() == 1 then
+			-- [[ Use Q ]]
+			if AhriMenu.Combo.Q:Value() and Ready(_Q) and ValidTarget(target, Spells.Q.range) then
+				AhriQ()
+				end
 			-- [[ Use E ]]
-		if AhriMenu.Combo.E:Value() and Ready(_E) and ValidTarget(target, Spells.E.range) then
-			AhriE()
+			if AhriMenu.Combo.E:Value() and Ready(_E) and ValidTarget(target, Spells.E.range) then
+				AhriE()
+				end
+			-- [[ Use W ]]
+			if AhriMenu.Combo.W:Value() and Ready(_W) and ValidTarget(target, Spells.W.range) then
+				AhriW()
+				end
+			-- [[ Use R ]]
+			if AhriMenu.Combo.R:Value() then
+				if CanUseSpell(myHero,_R) == Ready then
+					if ValidTarget(target, Spells.R.range+GetRange(myHero)) then
+						if 100*GetCurrentHp(target)/GetMaxHP(target) < AhriMenu.Combo.HP:Value() then
+							if EnemiesAraund(myHEro, Spells.R.range+GetRange(myHero)) >= AhriMenu.Combo.ME:Value() then
+								CastSkillShot(_R, GetMousePos())
+							end
+						end
+					end
+				end
 			end
-		-- [[ Use W ]]
-		if AhriMenu.Combo.W:Value() and Ready(_W) and ValidTarget(target, Spells.W.range) then
-			AhriW()
-			end
-		-- [[ Use R ]]
-		if AhriMenu.Combo.R:Value() then
-			if CanUseSpell(myHero,_R) == Ready then
-				if ValidTarget(target, Spells.R.range+GetRange(myHero)) then
-					if 100*GetCurrentHp(target)/GetMaxHP(target) < AhriMenu.Combo.HP:Value() then
-						if EnemiesAraund(myHEro, Spells.R.range+GetRange(myHero)) >= AhriMenu.Combo.ME:Value() then
-							CastSkillShot(_R, GetMousePos())
+		elseif AhriMenu.Combo.ComboMode:Value() == 2 then
+			-- [[ Use E ]]
+			if AhriMenu.Combo.E:Value() and Ready(_E) and ValidTarget(target, Spells.E.range) then
+				AhriE()
+				end
+			-- [[ Use Q ]]
+			if AhriMenu.Combo.Q:Value() and Ready(_Q) and ValidTarget(target, Spells.Q.range) then
+				AhriQ()
+				end
+			-- [[ Use W ]]
+			if AhriMenu.Combo.W:Value() and Ready(_W) and ValidTarget(target, Spells.W.range) then
+				AhriW()
+				end
+			-- [[ Use R ]]
+			if AhriMenu.Combo.R:Value() then
+				if CanUseSpell(myHero,_R) == Ready then
+					if ValidTarget(target, Spells.R.range+GetRange(myHero)) then
+						if 100*GetCurrentHp(target)/GetMaxHP(target) < AhriMenu.Combo.HP:Value() then
+							if EnemiesAraund(myHEro, Spells.R.range+GetRange(myHero)) >= AhriMenu.Combo.ME:Value() then
+								CastSkillShot(_R, GetMousePos())
+							end
 						end
 					end
 				end
 			end
 		end
-	end
+	end	
 end
 
 -- [[ Harass ]]
