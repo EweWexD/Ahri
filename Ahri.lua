@@ -4,6 +4,9 @@
 --╚══╗║ ║║ ║║║║║║║╔══╝║║ ╔╗║╔══╝     ║╚═╝║║╔═╗║║╔╗╔╝ ║║ 
 --║╚═╝║╔╣─╗║║║║║║║║   ║╚═╝║║╚══╗     ║╔═╗║║║ ║║║║║╚╗╔╣─╗
 --╚═══╝╚══╝╚╝╚╝╚╝╚╝   ╚═══╝╚═══╝     ╚╝ ╚╝╚╝ ╚╝╚╝╚═╝╚══╝
+-- Changelog V1.6
+-- +DMG Draw added.
+--
 -- Changelog V1.5
 -- +Now, you can choose the combo mode ( Normal mode or Start with E)
 
@@ -38,7 +41,7 @@ end
 AhriScriptPrint("Made by EweEwe")
 
 --  [[ AutoUpdate ]]
-local version = "1.5"
+local version = "1.6"
 function AutoUpdate(data)
 	
 	if tonumber(data) > tonumber(version) then
@@ -70,11 +73,11 @@ AhriMenu:SubMenu("Harass", "[Ahri] Harass Settings")
 AhriMenu.Harass:Boolean("Q", "Use Q", true)
 AhriMenu.Harass:Boolean("W", "Use W", true)
 AhriMenu.Harass:Boolean("E", "Use E", true)
-AhriMenu.Harass:Slider("Mana", "Min. Mana", 50, 0, 100, 1)
+AhriMenu.Harass:Slider("Mana", "Min. Mana", 50, 0, 100, 5)
 -- [[ LaneClear ]]
 AhriMenu:SubMenu("Farm", "[Ahri] Farm Settings")
 AhriMenu.Farm:Boolean("Q", "Use Q", true)
-AhriMenu.Farm:Slider("Mana", "Min. Mana", 50, 0, 100, 1)
+AhriMenu.Farm:Slider("Mana", "Min. Mana", 50, 0, 100, 5)
 -- [[ KillSteal ]]
 AhriMenu:SubMenu("KS", "[Ahri] Kill Steal Settings")
 AhriMenu.KS:Boolean("Q", "Use Q", true)
@@ -93,6 +96,20 @@ AhriMenu.Draw:Boolean("W", "Draw W", false)
 AhriMenu.Draw:Boolean("E", "Draw E", false)
 AhriMenu.Draw:Boolean("R", "Draw R", false)
 AhriMenu.Draw:Boolean("Disable", "Disable all drawingw", false)
+-- [[ DrawDMG ]]
+AhriMenu:SubMenu("DrawDMG", "[Ahri] DrawDMG")
+AhriMenu.DrawDMG:Boolean("DrawD", "Draw Damage", true)
+AhriMenu.DrawDMG:Boolean("Q", "Draw Q dmg", true)
+AhriMenu.DrawDMG:Boolean("W", "Draw W dmg", true)
+AhriMenu.DrawDMG:Boolean("E", "Draw E dmg", true)
+-- [[ Items ]]
+AhriMenu:SubMenu("Items", "[Ahri] Items Use")
+AhriMenu.Items:Boolean("HG", "Use Hextech Gunblade", true)
+AhriMenu.Items:Boolean("BC", "Use Bilfewater Cutlass", true)
+-- [[ Create by me :3 ]]
+AhriMenu:Info("Juan", "--------------")
+AhriMenu:Info("Created", "Made by EweEwe")
+
 
 -- [[ AutoLevel ]]
 local levelsc = {_Q, _E, _W, _Q, _Q, _R, _Q, _E, _Q, _E, _R, _E, _E, _W, _W, _R, _W, _W }
@@ -127,6 +144,7 @@ OnTick(function()
 	KS()
 	AutoLevel()
 	target = GetCurrentTarget()
+			 dmgCalc()
 			 Combo()
 			 Harass()
 			 Farm()
@@ -139,6 +157,39 @@ function AutoLevel()
 		DelayAction(function() LevelSpell(levelsc[GetLevel(myHero) + 1 - GetLevelPoints(myHero)]) end, 0.5)
 	end
 end
+
+-- [[ DMGCalc ]]
+function dmgCalc(spell)
+	local  dmg = {
+	["Q"] = 40 + 25*GetCastLevel(myHero,0) + GetBonusAP(myHero)*0.35,
+	["W"] = 40 + 25*GetCastLevel(myHero,0) + GetBonusAP(myHero)*0.12,
+	["E"] = 60 + 35*GetCastLevel(myHero,0) + GetBonusAP(myHero)*0.5,
+	} 
+	return dmg[spell]
+end
+
+-- [[ DrawDamage ]]
+OnDraw(function(myHero)
+	for _, unit in pairs(GetEnemyHeroes()) do
+		if ValidTarget(unit, 2000) and AhriMenu.DrawDMG.DrawD:Value() then
+			local DmgDraw=0
+			if Ready(_Q) and AhriMenu.DrawDMG.Q:Value() then 
+				DmgDraw = dmgCalc("Q")
+			end
+			if Ready(_W) and AhriMenu.DrawDMG.W:Value() then 
+				DmgDraw = dmgCalc("W")
+			end
+			if Ready(_E) and AhriMenu.DrawDMG.E:Value() then 
+				DmgDraw = dmgCalc("E")
+			end
+			DmgDraw = CalcDamage(myHero, unit, 0, DmgDraw)
+			if DmgDraw > GetCurrentHP(unit) then 
+				DmgDraw = GetCurrentHP(unit)
+			end
+			DrawDmgOverHpBar(unit,GetCurrentHP(unit),0,DmgDraw,0xFFC80000)
+		end
+	end
+end)
 
 -- [[ Ahri Q ]]
 function AhriQ()
@@ -229,6 +280,25 @@ function Combo()
 			end
 		end
 	end	
+end
+-- [[ Items Use ]]
+function Items()
+	if Mode() == "Combo" then
+		if EzrealMenu.Items.HG:Value() then
+			if GetItemSlot(myHero, 3146) >= 1 and ValidTarget(target, 700) then
+				if CanUseSpell(myHero, GetItemSlot(myHero, 3146)) then
+					CastTargetSpell(target, GetItemSlot(myHero, 3146))
+				end
+			end
+		end
+		if EzrealMenu.Items.BC:Value() then
+			if GetItemSlot(myHero, 3144) >= 1 and ValidTarget(target, 550) then
+				if CanUseSpell(myHero, GetItemSlot(myHero, 3144)) then
+					CastTargetSpell(target, GetItemSlot(myHero, 3144))
+				end
+			end
+		end
+	end
 end
 
 -- [[ Harass ]]
